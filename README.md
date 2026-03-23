@@ -7,6 +7,8 @@
 
 *Wrath* is a program for the visualisation and identification of candidate structural variants (SVs) from linked read data. Wrath calculates barcode sharing between windows of a given chromosome and produces heatmap plots that are useful to explore the data and identify candidate SVs. The pipeline can also automatically detect large SVs by using a double approach of z-scores threasholds and prediction bands from modelling of the data.
 
+This fork of *Wrath* is designed to work with `snakemake` to enhance configurability and portability.
+
 <!-- omit in toc -->
 ## On this page
 
@@ -19,7 +21,7 @@
     - [Chromosome plots and SV detection:](#chromosome-plots-and-sv-detection)
     - [Comparison of populations:](#comparison-of-populations)
   - [3. Outliers, Matrices, and Beds](#3-outliers-matrices-and-beds)
-- [Test example run](#test-example-run)
+- [Test Example Run](#test-example-run)
 - [Running *Wrath* on multiple chromosomes](#running-wrath-on-multiple-chromosomes)
 - [Citing *Wrath*](#citing-wrath)
 

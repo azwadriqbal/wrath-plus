@@ -1,0 +1,4 @@
+sample	group	bam
+SLVR_01	all	/path/to/SLVR_01.bam
+SLVR_02	inv	/path/to/SLVR_02.bam
+SLVR_02	inv	/path/to/SLVR_02.bam

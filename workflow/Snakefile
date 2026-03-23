@@ -1,0 +1,94 @@
+# Snakefile: Wrath-plus
+
+import os
+import pandas as pd
+import numpy as np
+import warnings
+from itertools import chain
+from itertools import combinations
+
+# -----------------------------
+# CONFIG & PARAMETERS
+# -----------------------------
+
+configfile: "config/config.yaml"
+
+samples = pd.read_csv(
+    config["sample_table"],
+    sep='\t'
+)
+chroms = pd.read_csv(
+    config["chroms"],
+    sep='\n'
+)
+outdir = config["outdir"]
+
+groups = sorted(samples["group"].unique())
+
+winsize = config["window_size"]
+
+group_of_sample = samples.set_index("sample")["group"].to_dict()
+
+sample_dict = samples.groupby('group')['bam'].apply(list).to_dict()
+
+
+# --- Input validation ---
+
+# Raise warning if bams are found in multiple groups
+
+## simple uniqueness check
+def uniqueness_check(data_dict):
+    all_values = chain.from_iterable(data_dict.values())
+    seen_values = set()
+    for value in all_values:
+        if value in seen_values:
+            return False
+        seen_values.add(value)
+    return True
+
+## issue warning
+if not uniqueness_check(sample_dict):
+        # Issue a warning if the value is negative
+        warnings.warn(
+            "BAM was assigned to multiple groups in sample table - please check if this was intended behavior.", 
+            UserWarning
+        )
+
+## issue Error if duplicate sample names found
+if samples["sample"].duplicated().any():
+    raise ValueError("Duplicate sample names found in sample sheet.")
+
+# for two pop comparisons, generate a list of paired groups for two-way comparisons
+pairs = list(combinations(groups, 2))
+
+# check for duplicate sample + group combos
+if not samples.set_index(['sample', 'group']).index.is_unique:
+    dupes = samples[samples.duplicated(subset=['sample', 'group'], keep=False)]
+    raise ValueError(
+        f"Duplicate (sample, group) combinations found in sample sheet.\n"
+        f"The duplicates are:\n{dupes.to_string(index=False)}"
+    )
+
+# validation check
+if config.get("two_pop_comparison", False):
+    if len(groups) < 2:
+        raise ValueError(
+            f"two_pop_comparison is enabled but only {len(groups)} group found. "
+            "At least 2 groups are required."
+        )
+
+
+# define targets based on config
+
+def get_targets():
+    targets = []
+    # ... conditionally append to targets ...
+    expand(
+    "{outdir}/matrices/jaccard_matrix_{winsize}_{chrom}_{group}.txt",
+    outdir=outdir, winsize=..., chrom=CHROMS, group=groups
+)
+    return targets
+
+
+#### ----------------WORKFLOW--------------------- #####
+
