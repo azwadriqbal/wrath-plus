@@ -1,8 +1,6 @@
 # Snakefile: Wrath-plus
 
-import os
 import pandas as pd
-import numpy as np
 import warnings
 from itertools import chain
 from itertools import combinations
@@ -17,10 +15,11 @@ samples = pd.read_csv(
     config["sample_table"],
     sep='\t'
 )
-chroms = pd.read_csv(
-    config["chroms"],
-    sep='\n'
-)
+
+# define chroms from chromlist
+with open(config["chroms"]) as f:
+    chroms = [line.strip() for line in f if line.strip()]
+
 outdir = config["outdir"]
 
 groups = sorted(samples["group"].unique())
@@ -48,18 +47,13 @@ def uniqueness_check(data_dict):
 
 ## issue warning
 if not uniqueness_check(sample_dict):
-        # Issue a warning if the value is negative
         warnings.warn(
             "BAM was assigned to multiple groups in sample table - please check if this was intended behavior.", 
             UserWarning
         )
 
-## issue Error if duplicate sample names found
-if samples["sample"].duplicated().any():
-    raise ValueError("Duplicate sample names found in sample sheet.")
 
-# for two pop comparisons, generate a list of paired groups for two-way comparisons
-pairs = list(combinations(groups, 2))
+
 
 # check for duplicate sample + group combos
 if not samples.set_index(['sample', 'group']).index.is_unique:
@@ -77,16 +71,38 @@ if config.get("two_pop_comparison", False):
             "At least 2 groups are required."
         )
 
+# for two pop comparisons, generate a list of paired groups for two-way comparisons
+pairs = list(combinations(groups, 2))
 
 # define targets based on config
 
 def get_targets():
     targets = []
     # ... conditionally append to targets ...
-    expand(
+    targets += expand(
     "{outdir}/matrices/jaccard_matrix_{winsize}_{chrom}_{group}.txt",
-    outdir=outdir, winsize=..., chrom=CHROMS, group=groups
-)
+    outdir=outdir, winsize=winsize, chrom=chroms, group=groups
+    )
+        
+    if config.get("plot", False):
+        targets += expand(
+            "{outdir}/plots/heatmap_{winsize}_{chrom}_{group}.png",
+            outdir=outdir, winsize=winsize, chrom=chroms, group=groups
+            )  # heatmaps
+    
+    if config.get("auto_detect_svs", False):
+        targets += expand(
+            "{outdir}/SVs/sv_{winsize}_{chrom}_{group}.txt",
+            outdir=outdir, winsize=winsize, chrom=chroms, group=groups
+            )  # SV files
+    
+    if config.get("two_pop_comparison", False):
+        targets += [
+            f"{outdir}/plots/heatmap_{winsize}_{chrom}_{g1}_vs_{g2}.png"
+            for chrom in chroms
+            for g1, g2 in pairs
+        ]  # pair-wise plots, list comprehension over pairs
+
     return targets
 
 
