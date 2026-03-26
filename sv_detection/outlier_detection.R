@@ -11,16 +11,18 @@ library(tidyr, quietly = TRUE, warn.conflicts = FALSE)
 library(dplyr, quietly = TRUE, warn.conflicts = FALSE)
 library(nlraa, quietly = TRUE, warn.conflicts = FALSE)
 
-# Outlier detection by Wrath combines two approaches: z-scores and modelling of the distribution of barcode sharing by distance from the diagonal
-# Outliers are defined as values that fall outside the z-score (absolute) threshold AND outside the prediction bands of the model
 
-zscore_threshold = 2
-predition_level = 0.95
 
 #### PART 1: DATA CLEANING ####
 #read in the data
 args = commandArgs(trailingOnly=TRUE)
 data <-read.csv(args[1], sep = ",", header = FALSE)
+
+# Outlier detection by Wrath combines two approaches: z-scores and modelling of the distribution of barcode sharing by distance from the diagonal
+# Outliers are defined as values that fall outside the z-score (absolute) threshold AND outside the prediction bands of the model
+
+zscore_threshold = as.numeric(args[3]) # z-score threshold for outlier detection, e.g. 2 or 3
+prediction_level = as.numeric(args[4]) # confidence level for prediction bands, e.g. 0.95 for 95% prediction bands
 
 # assign NAs to anything below and including the diagonal
 data_m <- as.matrix(data)
@@ -68,7 +70,7 @@ fo <- y ~ exp(a + b * exp(-x*c))
 fm <- nls(fo, points, start = list(a = 1, b = 1, c=1))
 
 # calculate and plot the prediction bands
-fm.Theoph.prd.bnd <- predict2_nls(fm, interval = "prediction", level = predition_level)
+fm.Theoph.prd.bnd <- predict2_nls(fm, interval = "prediction", level = prediction_level)
 
 # change name of quantiles so they are not relative to the prediction thresfold 
 # then prediction level can be changed and code doesn't break
@@ -90,7 +92,7 @@ plot = dataset %>%
   geom_ribbon(data = dataset,
               aes(x = x, ymin = Qbottom, ymax = Qtop), fill = "purple", alpha=0.3) +
   xlab("Distance from matrix") + ylab("Similarity index") +
-  ggtitle(paste(predition_level*100, "% prediction bands", sep = ""))+
+  ggtitle(paste(prediction_level*100, "% prediction bands", sep = ""))+
   geom_point(data = dataset %>%
                mutate(out=(y>Qtop | y<Qbottom)) %>%
                filter(out==TRUE, abs_z>zscore_threshold), aes(x = x, y = y), colour="#FF6600")+
