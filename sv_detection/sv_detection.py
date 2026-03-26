@@ -27,6 +27,7 @@ parser.add_argument("-m", "--matrix", help="Input matrix", action = "store")
 parser.add_argument("-o", "--outliers", help="Input detected outliers", action = "store")
 parser.add_argument("-s", "--outFile", help="Output SVs", action = "store")
 parser.add_argument("-f", "--winSize", help="Window size", type=int, action = "store", default = 1)
+parser.add_argument("-c", "--chromosome", help="Chromosome name", type=str, action = "store")
 
 args = parser.parse_args()
 
@@ -39,6 +40,7 @@ matrix_file = pd.read_csv(args.matrix, sep=',', lineterminator='\n', header=None
 outliers_file = pd.read_csv(args.outliers,sep=',', lineterminator='\n')
 output = args.outFile
 window_size = args.winSize
+chrom = args.chromosome
 
 
 #########################################################################################################################
@@ -57,6 +59,6 @@ breakPoints = pd.DataFrame(data=d)
 breakPoints['length']=breakPoints['maxcol']-breakPoints['minrow']
 breakPoints.sort_values(by=['length'], ascending=False, inplace=True)
 
-output_table={'SV_id':breakPoints.index.values, 'start':breakPoints['minrow']*window_size, 'end':breakPoints['maxcol']*window_size, 'length':breakPoints['length']*window_size}
+output_table={'SV_id':breakPoints.index.values,'chromosome': chrom, 'start':breakPoints['minrow']*window_size, 'end':breakPoints['maxcol']*window_size, 'length':breakPoints['length']*window_size}
 output_df=pd.DataFrame(output_table)
 output_df.to_csv(output)

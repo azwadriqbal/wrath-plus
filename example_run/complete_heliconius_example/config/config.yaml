@@ -6,7 +6,7 @@ genome_fasta: "Heliconius_erato_demophoon_v1_-_scaffolds.fa.gz" # path to refere
 wrath_scripts: "/home/ari22/wrath-plus/sv_detection" # path to Wrath scripts (typically sv_detection)
 outdir: "wrath_out" # output directory
 
-chroms: config/chroms.txt # path to chrom list
+chroms: "config/chroms.txt" # path to chrom list
 window_size: 5000 # window size in bp 
 threads: 8 # total number of threads to assign 
 auto_detect_svs: True # T/F if you want Wrath to auto-call SV's

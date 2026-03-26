@@ -16,6 +16,9 @@ samples = pd.read_csv(
     sep='\t'
 )
 
+samples["bam"] = samples["bam"].apply(
+    lambda b: os.path.abspath(b) if not os.path.isabs(b) else b
+)
 
 # define chroms from chromlist
 with open(config["chroms"]) as f:
@@ -29,10 +32,7 @@ winsize = config["window_size"]
 
 group_of_sample = samples.set_index("sample")["group"].to_dict()
 
-sample_bam = {
-    s: os.path.abspath(b) 
-    for s, b in samples.set_index("sample")["bam"].to_dict().items()
-}
+sample_bam = samples.set_index("sample")["bam"].to_dict()
 
 sample_dict = samples.groupby('group')['bam'].apply(list).to_dict()
 
