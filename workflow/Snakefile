@@ -222,11 +222,12 @@ rule merge_barcodes:
         group = "|".join(groups),
         chrom = "|".join(chroms)
     threads: config["threads"]
+    log: f"{outdir}/logs/merge_barcodes/merge_barcodes_{winsize}_{{chrom}}_{{group}}.log"
     conda: "envs/wrath_py.yaml"
     shell:
         """
         cat {input.beds} | bedtools sort -i - | bgzip -@ {threads} > {output.merged_bed}
-        tabix {output.merged_bed}
+        tabix {output.merged_bed} 2> {log}
         """
 
 rule jaccard_matrix:
@@ -240,6 +241,8 @@ rule jaccard_matrix:
         group = "|".join(groups),
         chrom = "|".join(chroms)
     threads: config["threads"]
+    log:
+        f"{outdir}/logs/jaccard_matrix/jaccard_matrix_{winsize}_{{chrom}}_{{group}}.log"
     params:
         script = config["wrath_scripts"] + "/jaccard_matrix_simplequeue.py"
     conda: "envs/wrath_py.yaml"
@@ -249,7 +252,7 @@ rule jaccard_matrix:
         --threads {threads} \
         -w {input.windows} \
         -b {input.barcodes} \
-        -o {output.jaccard_matrix}
+        -o {output.jaccard_matrix} 2> {log}
 
         sed -i 's/,$//' {output.jaccard_matrix}
         """
@@ -283,6 +286,7 @@ rule detect_outliers:
     wildcard_constraints:
         group = "|".join(groups),
         chrom = "|".join(chroms)
+    log: f"{outdir}/logs/detect_outliers/detect_outliers_{winsize}_{{chrom}}_{{group}}.log"
     params:
         script = config["wrath_scripts"] + "/outlier_detection.R",
         zscore_threshold = config.get("zscore_threshold", 2),
@@ -295,7 +299,7 @@ rule detect_outliers:
         {input.jaccard_matrix} \
         {params.prefix} \
         {params.zscore_threshold} \
-        {params.prediction_level}
+        {params.prediction_level} 2> {log}
         """
 
 rule sv_detection_and_heatmap:
