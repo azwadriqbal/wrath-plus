@@ -177,13 +177,15 @@ rule make_windows:
     wildcard_constraints:
         chrom = "|".join(chroms) # constrain wildcards to chroms defined in chroms.txt
     params:
-        region_arg = lambda wc: f"-b {regions}" if regions else f"-g {outdir}/genome.sizes",
-        winsize = winsize
+        makewindows_cmd = lambda wc: (
+        f"grep -w {wc.chrom} {regions if regions else f'{outdir}/genome.sizes'}"
+        f" | bedtools makewindows -{'b' if regions else 'g'} - -w {winsize}"
+        )
     conda:
         "envs/wrath_py.yaml"
     shell:
         """
-        bedtools makewindows {params.region_arg} -w {params.winsize} >  {output.windows}
+        {params.makewindows_cmd} >  {output.windows}
         """
 
 rule get_barcodes_per_sample:
@@ -230,7 +232,8 @@ rule merge_barcodes:
 rule jaccard_matrix:
     input:
         windows = window_path("{chrom}"),
-        barcodes = f"{outdir}/beds/merged_barcodes_{{group}}_{{chrom}}.bed.gz"
+        barcodes = f"{outdir}/beds/merged_barcodes_{{group}}_{{chrom}}.bed.gz",
+        index    = f"{outdir}/beds/merged_barcodes_{{group}}_{{chrom}}.bed.gz.tbi"
     output:
         jaccard_matrix = f"{outdir}/matrices/jaccard_matrix_{winsize}_{{chrom}}_{{group}}.txt"
     wildcard_constraints:
